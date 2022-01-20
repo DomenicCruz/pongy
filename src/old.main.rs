@@ -1,5 +1,5 @@
 use ggez::{Context, ContextBuilder, GameResult};
-use ggez::graphics::{self, Color, Text, Mesh};
+use ggez::graphics::{self, Color, Text};
 use ggez::event::{self, EventHandler, KeyCode};
 use ggez::input::keyboard;
 
@@ -116,28 +116,26 @@ fn restart_ball(ball_pos: &mut Point2<f32>, ball_vel: &mut Vector2<f32>, _ctx: &
 
 
 struct GameRect {
-    rectangle: Mesh,
     position: Point2<f32>,
     thickness: Point2<f32>, //height, width
 }
 
 impl GameRect{
-    pub fn new(position: Point2<f32>, thickness: Point2<f32>, ctx: &mut Context) -> Self {
-        let rectangle = graphics::Mesh::new_rectangle(
-           ctx,
-           graphics::DrawMode::fill(),
-           graphics::Rect::new(0.0, 0.0, thickness.x, thickness.y),
-           graphics::Color::WHITE,
-         ).expect("Cant create a mesh!");  //Panics on error, if we cant dreate mesh we cant play
-
+    pub fn new(position: Point2<f32>, thickness: Point2<f32>) -> Self {
         GameRect {
-            rectangle,
             position,
             thickness,
         }
     }
     fn draw(&self, ctx: &mut Context) -> GameResult<()>{
-        graphics::draw(ctx, &self.rectangle, (self.position,))?;
+        //TODO optimise mesh generation
+        let rect = graphics::Mesh::new_rectangle(
+           ctx,
+           graphics::DrawMode::fill(),
+           graphics::Rect::new(0.0, 0.0, self.thickness.x, self.thickness.y),
+           graphics::Color::WHITE,
+         )?;
+        graphics::draw(ctx, &rect, (self.position,))?;
         Ok(())
     }
 }
@@ -215,12 +213,12 @@ impl MyGame {
 
         MyGame {
             //Starting game state values
-            player_1_racket: GameRect::new(racket_1_pos, racket_thick, _ctx),
-            player_2_racket: GameRect::new(racket_2_pos, racket_thick, _ctx),
-            ball: GameRect::new(ball_pos, ball_thick, _ctx),
+            player_1_racket: GameRect::new(racket_1_pos, racket_thick),
+            player_2_racket: GameRect::new(racket_2_pos, racket_thick),
+            ball: GameRect::new(ball_pos, ball_thick),
             ball_velocity: ball_velocity,
             score: Score::new(text_pos, _ctx),
-            line: GameRect::new(line_pos, line_thick, _ctx),
+            line: GameRect::new(line_pos, line_thick),
         }
     }
 }
@@ -270,6 +268,8 @@ impl EventHandler for MyGame {
         //Beginning, draw after this
         graphics::clear(ctx, Color::BLACK);
         
+        //NOTE now mesh is generated each time, it can be optimised to run only once
+        //TODO optimise mesh generation
         self.player_1_racket.draw(ctx)?;
         self.player_2_racket.draw(ctx)?;
         self.line.draw(ctx)?;
